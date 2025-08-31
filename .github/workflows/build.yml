@@ -26,7 +26,7 @@ jobs:
         
     - name: Install RISC-V GCC toolchain
       run: |
-        xpm install @xpack-dev-tools/riscv-none-elf-gcc@14.2.0-3.1 --verbose
+        xpm install @xpack-dev-tools/riscv-none-elf-gcc@14.2.0-3.1 --global --verbose
         
     - name: Add toolchain to PATH
       run: |
