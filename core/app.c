@@ -1,4 +1,4 @@
-#include "framework/app_framework.h"
+#include "../apps/framework/app_framework.h"
 
 #ifdef __cplusplus
 extern "C" {

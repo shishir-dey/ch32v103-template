@@ -88,6 +88,7 @@ file(GLOB_RECURSE CPU_SOURCES "cpu/*.c")
 set(CORE_SOURCES
     core/ch32v10x_it.c
     core/main.cpp
+    core/app.c
 )
 
 # System sources
@@ -100,7 +101,6 @@ set(SYSTEM_SOURCES
 # Application sources
 set(APP_SOURCES
     apps/framework/app_framework.c
-    apps/app_main.c
     apps/hello.c
     apps/adc_polling.c
     apps/adc_interrupt.c
