@@ -6,30 +6,21 @@ A complete template project for the CH32V103 RISC-V microcontroller with CMake b
 
 ```
 ch32v103-template/
-├── .github/workflows/     # GitHub Actions CI/CD
-│   └── build.yml         # Automated build workflow
-├── apps/                 # Application code
-│   └── hello.c          # Example application
+├── .gitignore
+├── CMakeLists.txt
+├── LICENSE
+├── README.md
+├── .github/
+├── apps/                 # Application examples
+│   └── framework/        # Application framework
 ├── core/                 # Core system files
-│   ├── ch32v10x_conf.h  # Configuration header
-│   ├── ch32v10x_it.c    # Interrupt handlers
-│   ├── ch32v10x_it.h    # Interrupt handler declarations
-│   └── main.cpp         # Main application entry point
 ├── cpu/                  # CPU-specific code
-│   ├── core_riscv.c     # RISC-V core functions
-│   └── core_riscv.h     # RISC-V core definitions
 ├── driver/               # Hardware abstraction layer
 │   ├── inc/             # Driver header files
 │   └── src/             # Driver source files
 ├── lib/                  # Libraries
 │   └── debug/           # Debug utilities
-├── system/               # System-level code
-│   ├── Link.ld          # Linker script
-│   ├── startup_ch32v10x.S  # Startup assembly code
-│   ├── system_ch32v10x.c   # System initialization
-│   ├── system_ch32v10x.h   # System definitions
-│   └── syscalls.c       # POSIX syscalls implementation
-└── CMakeLists.txt        # CMake build configuration
+└── system/               # System-level code
 ```
 
 ## Prerequisites
