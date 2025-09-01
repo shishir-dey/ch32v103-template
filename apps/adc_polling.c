@@ -56,5 +56,3 @@ void adc_polling_loop(void) {
     
     Delay_Ms(1000);
 }
-
-REGISTER_APP(adc_polling_setup, adc_polling_loop);

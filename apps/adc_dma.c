@@ -106,5 +106,3 @@ void adc_dma_loop(void) {
     
     Delay_Ms(1000);
 }
-
-REGISTER_APP(adc_dma_setup, adc_dma_loop);

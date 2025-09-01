@@ -91,5 +91,3 @@ void watchdog_loop(void) {
     
     Delay_Ms(500);
 }
-
-REGISTER_APP(watchdog_setup, watchdog_loop);

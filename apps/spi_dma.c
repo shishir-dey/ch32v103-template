@@ -8,23 +8,23 @@
 
 #define SPI_DMA_BUFFER_SIZE 16
 
-volatile uint8_t tx_dma_buffer[SPI_DMA_BUFFER_SIZE];
-volatile uint8_t rx_dma_buffer[SPI_DMA_BUFFER_SIZE];
-volatile uint8_t dma_tx_complete = 1;
-volatile uint8_t dma_rx_complete = 1;
+volatile uint8_t spi_dma_tx_buffer[SPI_DMA_BUFFER_SIZE];
+volatile uint8_t spi_dma_rx_buffer[SPI_DMA_BUFFER_SIZE];
+volatile uint8_t spi_dma_tx_complete = 1;
+volatile uint8_t spi_dma_rx_complete = 1;
 
 void DMA1_Channel2_IRQHandler(void) {
     if(DMA_GetITStatus(DMA1_IT_TC2) != RESET) {
-        dma_rx_complete = 1;
+        spi_dma_rx_complete = 1;
         DMA_ClearITPendingBit(DMA1_IT_TC2);
     }
 }
 
 void DMA1_Channel3_IRQHandler(void) {
     if(DMA_GetITStatus(DMA1_IT_TC3) != RESET) {
-        dma_tx_complete = 1;
+        spi_dma_tx_complete = 1;
         DMA_ClearITPendingBit(DMA1_IT_TC3);
-        
+
         // Pull CS high to end transaction
         GPIO_SetBits(GPIOA, GPIO_Pin_4);
     }
@@ -64,7 +64,7 @@ void spi_dma_setup(void) {
     
     // Configure DMA for SPI1 RX (Channel 2)
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&SPI1->DATAR;
-    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)rx_dma_buffer;
+    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)spi_dma_rx_buffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
     DMA_InitStructure.DMA_BufferSize = SPI_DMA_BUFFER_SIZE;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
@@ -75,10 +75,10 @@ void spi_dma_setup(void) {
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
     DMA_Init(DMA1_Channel2, &DMA_InitStructure);
-    
+
     // Configure DMA for SPI1 TX (Channel 3)
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&SPI1->DATAR;
-    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)tx_dma_buffer;
+    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)spi_dma_tx_buffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
     DMA_InitStructure.DMA_BufferSize = SPI_DMA_BUFFER_SIZE;
     DMA_Init(DMA1_Channel3, &DMA_InitStructure);
@@ -117,20 +117,20 @@ void spi_dma_setup(void) {
 
 void spi_dma_transfer(uint8_t* tx_data, uint16_t length) {
     // Wait for previous transfer to complete
-    while(!dma_tx_complete || !dma_rx_complete);
-    
+    while(!spi_dma_tx_complete || !spi_dma_rx_complete);
+
     if(length > SPI_DMA_BUFFER_SIZE) {
         length = SPI_DMA_BUFFER_SIZE;
     }
-    
+
     // Copy data to transmit buffer
     for(uint16_t i = 0; i < length; i++) {
-        tx_dma_buffer[i] = tx_data ? tx_data[i] : 0xFF; // Use 0xFF if no data provided
+        spi_dma_tx_buffer[i] = tx_data ? tx_data[i] : 0xFF; // Use 0xFF if no data provided
     }
-    
+
     // Reset completion flags
-    dma_tx_complete = 0;
-    dma_rx_complete = 0;
+    spi_dma_tx_complete = 0;
+    spi_dma_rx_complete = 0;
     
     // Configure DMA transfer lengths
     DMA_Cmd(DMA1_Channel2, DISABLE);
@@ -159,7 +159,7 @@ void spi_dma_read(uint16_t length) {
 }
 
 uint8_t spi_dma_is_busy(void) {
-    return (!dma_tx_complete || !dma_rx_complete);
+    return (!spi_dma_tx_complete || !spi_dma_rx_complete);
 }
 
 void spi_dma_loop(void) {
@@ -193,7 +193,7 @@ void spi_dma_loop(void) {
         // Just completed a read operation
         printf("SPI DMA: RX Data: ");
         for(int i = 0; i < SPI_DMA_BUFFER_SIZE; i++) {
-            printf("0x%02X ", rx_dma_buffer[i]);
+            printf("0x%02X ", spi_dma_rx_buffer[i]);
         }
         printf("\n");
         
@@ -212,5 +212,3 @@ void spi_dma_loop(void) {
     
     Delay_Ms(100);
 }
-
-REGISTER_APP(spi_dma_setup, spi_dma_loop);

@@ -7,34 +7,34 @@
 
 #define SPI_BUFFER_SIZE 16
 
-volatile uint8_t tx_buffer[SPI_BUFFER_SIZE];
-volatile uint8_t rx_buffer[SPI_BUFFER_SIZE];
-volatile uint16_t tx_index = 0;
-volatile uint16_t rx_index = 0;
-volatile uint16_t transfer_length = 0;
-volatile uint8_t spi_transfer_complete = 1;
+volatile uint8_t spi_int_tx_buffer[SPI_BUFFER_SIZE];
+volatile uint8_t spi_int_rx_buffer[SPI_BUFFER_SIZE];
+volatile uint16_t spi_int_tx_index = 0;
+volatile uint16_t spi_int_rx_index = 0;
+volatile uint16_t spi_int_transfer_length = 0;
+volatile uint8_t spi_int_transfer_complete = 1;
 
 void SPI1_IRQHandler(void) {
     // Handle receive interrupt
     if(SPI_I2S_GetITStatus(SPI1, SPI_I2S_IT_RXNE) != RESET) {
-        rx_buffer[rx_index++] = SPI_I2S_ReceiveData(SPI1);
-        
-        if(rx_index >= transfer_length) {
+        spi_int_rx_buffer[spi_int_rx_index++] = SPI_I2S_ReceiveData(SPI1);
+
+        if(spi_int_rx_index >= spi_int_transfer_length) {
             // Transfer complete
             SPI_I2S_ITConfig(SPI1, SPI_I2S_IT_RXNE, DISABLE);
             SPI_I2S_ITConfig(SPI1, SPI_I2S_IT_TXE, DISABLE);
-            
+
             // Pull CS high to end transaction
             GPIO_SetBits(GPIOA, GPIO_Pin_4);
-            
-            spi_transfer_complete = 1;
+
+            spi_int_transfer_complete = 1;
         }
     }
-    
+
     // Handle transmit interrupt
     if(SPI_I2S_GetITStatus(SPI1, SPI_I2S_IT_TXE) != RESET) {
-        if(tx_index < transfer_length) {
-            SPI_I2S_SendData(SPI1, tx_buffer[tx_index++]);
+        if(spi_int_tx_index < spi_int_transfer_length) {
+            SPI_I2S_SendData(SPI1, spi_int_tx_buffer[spi_int_tx_index++]);
         } else {
             // No more data to send, disable TXE interrupt
             SPI_I2S_ITConfig(SPI1, SPI_I2S_IT_TXE, DISABLE);
@@ -99,26 +99,26 @@ void spi_interrupt_setup(void) {
 
 void spi_interrupt_transfer(uint8_t* tx_data, uint16_t length) {
     // Wait for previous transfer to complete
-    while(!spi_transfer_complete);
-    
+    while(!spi_int_transfer_complete);
+
     if(length > SPI_BUFFER_SIZE) {
         length = SPI_BUFFER_SIZE;
     }
-    
+
     // Copy data to transmit buffer
     for(uint16_t i = 0; i < length; i++) {
-        tx_buffer[i] = tx_data ? tx_data[i] : 0xFF; // Use 0xFF if no data provided
+        spi_int_tx_buffer[i] = tx_data ? tx_data[i] : 0xFF; // Use 0xFF if no data provided
     }
-    
+
     // Reset indices and set transfer length
-    tx_index = 0;
-    rx_index = 0;
-    transfer_length = length;
-    spi_transfer_complete = 0;
-    
+    spi_int_tx_index = 0;
+    spi_int_rx_index = 0;
+    spi_int_transfer_length = length;
+    spi_int_transfer_complete = 0;
+
     // Pull CS low to start transaction
     GPIO_ResetBits(GPIOA, GPIO_Pin_4);
-    
+
     // Enable interrupts
     SPI_I2S_ITConfig(SPI1, SPI_I2S_IT_RXNE, ENABLE);
     SPI_I2S_ITConfig(SPI1, SPI_I2S_IT_TXE, ENABLE);
@@ -136,10 +136,10 @@ void spi_interrupt_loop(void) {
     static uint8_t test_data[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22};
     static uint32_t loop_counter = 0;
     static uint8_t operation = 0; // 0 = write, 1 = read
-    
-    if(spi_transfer_complete) {
+
+    if(spi_int_transfer_complete) {
         printf("SPI Interrupt: Loop #%d\n", (int)loop_counter);
-        
+
         if(operation == 0) {
             // Write operation
             printf("SPI Interrupt: Writing data: ");
@@ -147,7 +147,7 @@ void spi_interrupt_loop(void) {
                 printf("0x%02X ", test_data[i]);
             }
             printf("\n");
-            
+
             spi_interrupt_write(test_data, 8);
             operation = 1;
         } else {
@@ -156,7 +156,7 @@ void spi_interrupt_loop(void) {
             spi_interrupt_read(8);
             operation = 0;
             loop_counter++;
-            
+
             // Update test data for next iteration
             for(int i = 0; i < 8; i++) {
                 test_data[i]++;
@@ -164,12 +164,12 @@ void spi_interrupt_loop(void) {
         }
     } else {
         // Check if transfer completed
-        if(spi_transfer_complete) {
+        if(spi_int_transfer_complete) {
             if(operation == 0) {
                 // Just completed a read operation
                 printf("SPI Interrupt: Received data: ");
-                for(int i = 0; i < transfer_length; i++) {
-                    printf("0x%02X ", rx_buffer[i]);
+                for(int i = 0; i < spi_int_transfer_length; i++) {
+                    printf("0x%02X ", spi_int_rx_buffer[i]);
                 }
                 printf("\n");
             } else {
@@ -178,8 +178,6 @@ void spi_interrupt_loop(void) {
             }
         }
     }
-    
+
     Delay_Ms(100);
 }
-
-REGISTER_APP(spi_interrupt_setup, spi_interrupt_loop);

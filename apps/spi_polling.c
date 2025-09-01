@@ -154,5 +154,3 @@ void spi_polling_loop(void) {
     loop_counter++;
     Delay_Ms(2000);
 }
-
-REGISTER_APP(spi_polling_setup, spi_polling_loop);

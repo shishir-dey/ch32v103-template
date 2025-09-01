@@ -9,21 +9,21 @@
 #define I2C_SLAVE_ADDR 0xA0
 #define BUFFER_SIZE 8
 
-volatile uint8_t tx_buffer[BUFFER_SIZE] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77};
-volatile uint8_t rx_buffer[BUFFER_SIZE];
-volatile uint8_t dma_tx_complete = 0;
-volatile uint8_t dma_rx_complete = 0;
+volatile uint8_t i2c_tx_buffer[BUFFER_SIZE] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77};
+volatile uint8_t i2c_rx_buffer[BUFFER_SIZE];
+volatile uint8_t i2c_dma_tx_complete = 0;
+volatile uint8_t i2c_dma_rx_complete = 0;
 
 void DMA1_Channel6_IRQHandler(void) {
     if(DMA_GetITStatus(DMA1_IT_TC6) != RESET) {
-        dma_tx_complete = 1;
+        i2c_dma_tx_complete = 1;
         DMA_ClearITPendingBit(DMA1_IT_TC6);
     }
 }
 
 void DMA1_Channel7_IRQHandler(void) {
     if(DMA_GetITStatus(DMA1_IT_TC7) != RESET) {
-        dma_rx_complete = 1;
+        i2c_dma_rx_complete = 1;
         DMA_ClearITPendingBit(DMA1_IT_TC7);
     }
 }
@@ -49,7 +49,7 @@ void i2c_dma_setup(void) {
     
     // Configure DMA for I2C TX (Channel 6)
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&I2C1->DATAR;
-    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)tx_buffer;
+    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)i2c_tx_buffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
     DMA_InitStructure.DMA_BufferSize = BUFFER_SIZE;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
@@ -60,10 +60,10 @@ void i2c_dma_setup(void) {
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
     DMA_Init(DMA1_Channel6, &DMA_InitStructure);
-    
+
     // Configure DMA for I2C RX (Channel 7)
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&I2C1->DATAR;
-    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)rx_buffer;
+    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)i2c_rx_buffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
     DMA_InitStructure.DMA_BufferSize = BUFFER_SIZE;
     DMA_Init(DMA1_Channel7, &DMA_InitStructure);
@@ -97,15 +97,15 @@ void i2c_dma_setup(void) {
 
 uint8_t i2c_dma_write(uint8_t slave_addr, uint8_t *data, uint16_t size) {
     uint32_t timeout = 0x10000;
-    
+
     // Wait until I2C is not busy
     while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY) && timeout--);
     if(timeout == 0) return 1;
-    
+
     // Reset DMA channel
     DMA_Cmd(DMA1_Channel6, DISABLE);
     DMA_SetCurrDataCounter(DMA1_Channel6, size);
-    dma_tx_complete = 0;
+    i2c_dma_tx_complete = 0;
     
     // Enable I2C DMA
     I2C_DMACmd(I2C1, ENABLE);
@@ -126,7 +126,7 @@ uint8_t i2c_dma_write(uint8_t slave_addr, uint8_t *data, uint16_t size) {
     DMA_Cmd(DMA1_Channel6, ENABLE);
     
     // Wait for DMA completion
-    while(!dma_tx_complete);
+    while(!i2c_dma_tx_complete);
     
     // Wait for I2C completion
     timeout = 0x10000;
@@ -159,7 +159,7 @@ uint8_t i2c_dma_read(uint8_t slave_addr, uint8_t reg_addr, uint8_t *data, uint16
     // Reset DMA channel
     DMA_Cmd(DMA1_Channel7, DISABLE);
     DMA_SetCurrDataCounter(DMA1_Channel7, size);
-    dma_rx_complete = 0;
+    i2c_dma_rx_complete = 0;
     
     // Enable I2C DMA
     I2C_DMACmd(I2C1, ENABLE);
@@ -183,7 +183,7 @@ uint8_t i2c_dma_read(uint8_t slave_addr, uint8_t reg_addr, uint8_t *data, uint16
     DMA_Cmd(DMA1_Channel7, ENABLE);
     
     // Wait for DMA completion
-    while(!dma_rx_complete);
+    while(!i2c_dma_rx_complete);
     
     // Generate stop condition
     I2C_GenerateSTOP(I2C1, ENABLE);
@@ -197,11 +197,11 @@ uint8_t i2c_dma_read(uint8_t slave_addr, uint8_t reg_addr, uint8_t *data, uint16
 
 void i2c_dma_loop(void) {
     static uint8_t operation = 0;
-    
+
     if(operation == 0) {
         // Write operation
         printf("I2C DMA: Writing %d bytes\n", BUFFER_SIZE);
-        if(i2c_dma_write(I2C_SLAVE_ADDR, (uint8_t*)tx_buffer, BUFFER_SIZE) == 0) {
+        if(i2c_dma_write(I2C_SLAVE_ADDR, (uint8_t*)i2c_tx_buffer, BUFFER_SIZE) == 0) {
             printf("I2C DMA: Write successful\n");
         } else {
             printf("I2C DMA: Write failed\n");
@@ -210,24 +210,22 @@ void i2c_dma_loop(void) {
     } else {
         // Read operation
         printf("I2C DMA: Reading %d bytes\n", BUFFER_SIZE);
-        if(i2c_dma_read(I2C_SLAVE_ADDR, 0x00, (uint8_t*)rx_buffer, BUFFER_SIZE) == 0) {
+        if(i2c_dma_read(I2C_SLAVE_ADDR, 0x00, (uint8_t*)i2c_rx_buffer, BUFFER_SIZE) == 0) {
             printf("I2C DMA: Read successful - ");
             for(int i = 0; i < BUFFER_SIZE; i++) {
-                printf("0x%02X ", rx_buffer[i]);
+                printf("0x%02X ", i2c_rx_buffer[i]);
             }
             printf("\n");
         } else {
             printf("I2C DMA: Read failed\n");
         }
         operation = 0;
-        
+
         // Update test data
         for(int i = 0; i < BUFFER_SIZE; i++) {
-            tx_buffer[i]++;
+            i2c_tx_buffer[i]++;
         }
     }
-    
+
     Delay_Ms(2000);
 }
-
-REGISTER_APP(i2c_dma_setup, i2c_dma_loop);

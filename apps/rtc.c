@@ -155,5 +155,3 @@ void rtc_loop(void) {
     
     Delay_Ms(100);
 }
-
-REGISTER_APP(rtc_setup, rtc_loop);

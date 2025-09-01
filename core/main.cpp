@@ -17,7 +17,15 @@
 */
 
 #include "debug.h"
-#include "../apps/framework/app_framework.h"
+
+// Forward declaration for main app routine
+#ifdef __cplusplus
+extern "C" {
+#endif
+void app_entry(void);
+#ifdef __cplusplus
+}
+#endif
 
 /* Global typedef */
 
@@ -41,10 +49,9 @@ int main(void)
 
     printf("This is printf example\r\n");
 
-    current_app.setup();
+    // Call main application routine (defined in app_main.c)
+    app_entry();
 
-    while(1)
-    {
-        current_app.loop();
-    }
+    // This point should never be reached
+    return 0;
 }

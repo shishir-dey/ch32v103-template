@@ -109,5 +109,3 @@ void uart_polling_loop(void) {
     message_counter++;
     Delay_Ms(100);
 }
-
-REGISTER_APP(uart_polling_setup, uart_polling_loop);

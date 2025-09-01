@@ -73,6 +73,7 @@ include_directories(
     driver/inc
     lib/debug
     system
+    apps/framework
 )
 
 # Define preprocessor macros
@@ -98,7 +99,28 @@ set(SYSTEM_SOURCES
 
 # Application sources
 set(APP_SOURCES
+    apps/framework/app_framework.c
+    apps/app_main.c
     apps/hello.c
+    apps/adc_polling.c
+    apps/adc_interrupt.c
+    apps/adc_dma.c
+    apps/gpio_polling.c
+    apps/gpio_interrupt.c
+    apps/i2c_polling.c
+    apps/i2c_interrupt.c
+    apps/i2c_dma.c
+    apps/rtc.c
+    apps/spi_polling.c
+    apps/spi_interrupt.c
+    apps/spi_dma.c
+    apps/timer_interrupt.c
+    apps/timer_pwm.c
+    apps/uart_polling.c
+    apps/uart_interrupt.c
+    apps/uart_dma.c
+    apps/flash.c
+    apps/watchdog.c
 )
 
 # All sources

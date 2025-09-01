@@ -5,21 +5,21 @@
 #include "ch32v10x_gpio.h"
 #include "ch32v10x_misc.h"
 
-volatile uint32_t timer_counter = 0;
-volatile uint8_t led_state = 0;
+volatile uint32_t timer_int_counter = 0;
+volatile uint8_t timer_int_led_state = 0;
 
 void TIM2_IRQHandler(void) {
     if(TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET) {
-        timer_counter++;
-        
+        timer_int_counter++;
+
         // Toggle LED every second (assuming 1Hz timer)
-        led_state = !led_state;
-        if(led_state) {
+        timer_int_led_state = !timer_int_led_state;
+        if(timer_int_led_state) {
             GPIO_ResetBits(GPIOC, GPIO_Pin_13); // LED ON
         } else {
             GPIO_SetBits(GPIOC, GPIO_Pin_13);   // LED OFF
         }
-        
+
         TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
     }
 }
@@ -73,14 +73,12 @@ void timer_interrupt_setup(void) {
 
 void timer_interrupt_loop(void) {
     static uint32_t last_counter = 0;
-    
-    if(timer_counter != last_counter) {
-        printf("Timer Interrupt: Count = %d, LED = %s\n", 
-               (int)timer_counter, led_state ? "ON" : "OFF");
-        last_counter = timer_counter;
+
+    if(timer_int_counter != last_counter) {
+        printf("Timer Interrupt: Count = %d, LED = %s\n",
+               (int)timer_int_counter, timer_int_led_state ? "ON" : "OFF");
+        last_counter = timer_int_counter;
     }
-    
+
     Delay_Ms(100);
 }
-
-REGISTER_APP(timer_interrupt_setup, timer_interrupt_loop);

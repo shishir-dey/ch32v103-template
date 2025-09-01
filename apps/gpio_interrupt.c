@@ -5,12 +5,12 @@
 #include "ch32v10x_exti.h"
 #include "ch32v10x_misc.h"
 
-volatile uint8_t button_pressed = 0;
-volatile uint8_t led_state = 0;
+volatile uint8_t gpio_int_button_pressed = 0;
+volatile uint8_t gpio_int_led_state = 0;
 
 void EXTI4_IRQHandler(void) {
     if(EXTI_GetITStatus(EXTI_Line4) != RESET) {
-        button_pressed = 1;
+        gpio_int_button_pressed = 1;
         EXTI_ClearITPendingBit(EXTI_Line4);
     }
 }
@@ -57,23 +57,21 @@ void gpio_interrupt_setup(void) {
 }
 
 void gpio_interrupt_loop(void) {
-    if(button_pressed) {
-        button_pressed = 0;
-        led_state = !led_state;
-        
-        if(led_state) {
+    if(gpio_int_button_pressed) {
+        gpio_int_button_pressed = 0;
+        gpio_int_led_state = !gpio_int_led_state;
+
+        if(gpio_int_led_state) {
             GPIO_ResetBits(GPIOC, GPIO_Pin_13); // LED ON
             printf("GPIO Interrupt: Button pressed, LED ON\n");
         } else {
             GPIO_SetBits(GPIOC, GPIO_Pin_13);   // LED OFF
             printf("GPIO Interrupt: Button pressed, LED OFF\n");
         }
-        
+
         // Simple debounce delay
         Delay_Ms(200);
     }
-    
+
     Delay_Ms(10);
 }
-
-REGISTER_APP(gpio_interrupt_setup, gpio_interrupt_loop);

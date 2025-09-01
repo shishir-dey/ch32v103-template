@@ -173,5 +173,3 @@ next_loop:
     // Run test every 5 seconds
     Delay_Ms(5000);
 }
-
-REGISTER_APP(flash_setup, flash_loop);

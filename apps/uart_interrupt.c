@@ -8,35 +8,35 @@
 #define RX_BUFFER_SIZE 128
 #define TX_BUFFER_SIZE 128
 
-volatile char rx_buffer[RX_BUFFER_SIZE];
-volatile char tx_buffer[TX_BUFFER_SIZE];
-volatile uint16_t rx_head = 0, rx_tail = 0;
-volatile uint16_t tx_head = 0, tx_tail = 0;
-volatile uint8_t tx_busy = 0;
+volatile char uart_int_rx_buffer[RX_BUFFER_SIZE];
+volatile char uart_int_tx_buffer[TX_BUFFER_SIZE];
+volatile uint16_t uart_int_rx_head = 0, uart_int_rx_tail = 0;
+volatile uint16_t uart_int_tx_head = 0, uart_int_tx_tail = 0;
+volatile uint8_t uart_int_tx_busy = 0;
 
 void USART1_IRQHandler(void) {
     // Handle receive interrupt
     if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
         uint8_t received_char = USART_ReceiveData(USART1);
-        
-        uint16_t next_head = (rx_head + 1) % RX_BUFFER_SIZE;
-        if(next_head != rx_tail) {
-            rx_buffer[rx_head] = received_char;
-            rx_head = next_head;
+
+        uint16_t next_head = (uart_int_rx_head + 1) % RX_BUFFER_SIZE;
+        if(next_head != uart_int_rx_tail) {
+            uart_int_rx_buffer[uart_int_rx_head] = received_char;
+            uart_int_rx_head = next_head;
         }
-        
+
         USART_ClearITPendingBit(USART1, USART_IT_RXNE);
     }
-    
+
     // Handle transmit interrupt
     if(USART_GetITStatus(USART1, USART_IT_TXE) != RESET) {
-        if(tx_head != tx_tail) {
-            USART_SendData(USART1, tx_buffer[tx_tail]);
-            tx_tail = (tx_tail + 1) % TX_BUFFER_SIZE;
+        if(uart_int_tx_head != uart_int_tx_tail) {
+            USART_SendData(USART1, uart_int_tx_buffer[uart_int_tx_tail]);
+            uart_int_tx_tail = (uart_int_tx_tail + 1) % TX_BUFFER_SIZE;
         } else {
             // No more data to send, disable TXE interrupt
             USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
-            tx_busy = 0;
+            uart_int_tx_busy = 0;
         }
     }
 }
@@ -88,36 +88,36 @@ void uart_interrupt_setup(void) {
 }
 
 uint8_t uart_rx_available(void) {
-    return (rx_head != rx_tail);
+    return (uart_int_rx_head != uart_int_rx_tail);
 }
 
 char uart_read_char(void) {
-    if(rx_head == rx_tail) {
+    if(uart_int_rx_head == uart_int_rx_tail) {
         return 0; // No data available
     }
-    
-    char c = rx_buffer[rx_tail];
-    rx_tail = (rx_tail + 1) % RX_BUFFER_SIZE;
+
+    char c = uart_int_rx_buffer[uart_int_rx_tail];
+    uart_int_rx_tail = (uart_int_rx_tail + 1) % RX_BUFFER_SIZE;
     return c;
 }
 
 void uart_send_char(char c) {
-    uint16_t next_head = (tx_head + 1) % TX_BUFFER_SIZE;
-    
+    uint16_t next_head = (uart_int_tx_head + 1) % TX_BUFFER_SIZE;
+
     // Wait if buffer is full
-    while(next_head == tx_tail);
-    
-    tx_buffer[tx_head] = c;
-    tx_head = next_head;
-    
+    while(next_head == uart_int_tx_tail);
+
+    uart_int_tx_buffer[uart_int_tx_head] = c;
+    uart_int_tx_head = next_head;
+
     // Enable TXE interrupt if not already transmitting
-    if(!tx_busy) {
-        tx_busy = 1;
+    if(!uart_int_tx_busy) {
+        uart_int_tx_busy = 1;
         USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
     }
 }
 
-void uart_send_string(const char* str) {
+void uart_int_send_string(const char* str) {
     while(*str) {
         uart_send_char(*str++);
     }
@@ -143,9 +143,9 @@ void uart_interrupt_loop(void) {
                 printf("UART Interrupt: Received: '%s'\n", rx_line_buffer);
                 
                 // Send response
-                uart_send_string("Echo: ");
-                uart_send_string(rx_line_buffer);
-                uart_send_string("\r\n");
+                uart_int_send_string("Echo: ");
+                uart_int_send_string(rx_line_buffer);
+                uart_int_send_string("\r\n");
                 
                 rx_line_index = 0;
             }
@@ -158,7 +158,7 @@ void uart_interrupt_loop(void) {
     static uint32_t last_send_time = 0;
     if((last_send_time == 0) || ((message_counter - last_send_time) >= 50)) { // 50 * 100ms = 5s
         sprintf(tx_message, "UART Interrupt Message #%d\r\n", (int)message_counter);
-        uart_send_string(tx_message);
+        uart_int_send_string(tx_message);
         
         printf("UART Interrupt: Sent message #%d\n", (int)message_counter);
         last_send_time = message_counter;
@@ -167,5 +167,3 @@ void uart_interrupt_loop(void) {
     message_counter++;
     Delay_Ms(100);
 }
-
-REGISTER_APP(uart_interrupt_setup, uart_interrupt_loop);

@@ -50,5 +50,3 @@ void gpio_polling_loop(void) {
     last_button_state = button_state;
     Delay_Ms(50); // Debounce delay
 }
-
-REGISTER_APP(gpio_polling_setup, gpio_polling_loop);

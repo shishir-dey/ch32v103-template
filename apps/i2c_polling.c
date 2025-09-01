@@ -156,5 +156,3 @@ void i2c_polling_loop(void) {
     test_data++;
     Delay_Ms(2000);
 }
-
-REGISTER_APP(i2c_polling_setup, i2c_polling_loop);

@@ -102,5 +102,3 @@ void timer_pwm_loop(void) {
     
     Delay_Ms(10);
 }
-
-REGISTER_APP(timer_pwm_setup, timer_pwm_loop);

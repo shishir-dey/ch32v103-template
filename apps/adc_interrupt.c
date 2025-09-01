@@ -75,5 +75,3 @@ void adc_interrupt_loop(void) {
     conversion_complete = 0;
     Delay_Ms(1000);
 }
-
-REGISTER_APP(adc_interrupt_setup, adc_interrupt_loop);

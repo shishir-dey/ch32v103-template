@@ -181,5 +181,3 @@ void i2c_interrupt_loop(void) {
     
     Delay_Ms(1000);
 }
-
-REGISTER_APP(i2c_interrupt_setup, i2c_interrupt_loop);
