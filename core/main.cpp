@@ -17,7 +17,7 @@
 */
 
 #include "debug.h"
-#include "../apps/app_framework.h"
+#include "../apps/framework/app_framework.h"
 
 /* Global typedef */
 
