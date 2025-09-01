@@ -17,6 +17,7 @@
 */
 
 #include "debug.h"
+#include "../apps/app_framework.h"
 
 /* Global typedef */
 
@@ -40,7 +41,10 @@ int main(void)
 
     printf("This is printf example\r\n");
 
+    current_app.setup();
+
     while(1)
     {
+        current_app.loop();
     }
 }
