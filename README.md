@@ -83,6 +83,28 @@ Add this directory to your PATH environment variable.
    cmake ..
    make -j$(nproc)
    ```
+   
+## Flashing with WCH-Link
+
+To flash the compiled firmware to the CH32V103 microcontroller, use the WCH-Link tool (wlink).
+
+### Installation
+
+Install wlink using Cargo:
+
+```bash
+cargo install --git https://github.com/ch32-rs/wlink
+```
+
+### Usage
+
+WCH-Link is a flash tool for WCH's RISC-V MCUs (CH32V, CH56X, CH57X, CH58X, CH59X, CH32L103, CH32X035, CH641, CH643).
+
+Example: Flash the firmware binary to address 0x08000000:
+
+```bash
+wlink flash --address 0x08000000 ./firmware.bin
+```
 
 ## License
 
