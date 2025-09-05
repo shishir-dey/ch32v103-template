@@ -23,10 +23,10 @@ void list_apps(void);
 App *get_current_app(void);
 
 #define REGISTER_APP(name, setup_func, loop_func) \
-    void __register_app_##setup_func(void) __attribute__((constructor)); \
-    void __register_app_##setup_func(void) { \
-        register_app(name, setup_func, loop_func); \
-    }
+        void __register_app_ ## setup_func(void) __attribute__((constructor)); \
+        void __register_app_ ## setup_func(void){ \
+            register_app(name, setup_func, loop_func); \
+        }
 
 #ifdef __cplusplus
 }

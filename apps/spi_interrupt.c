@@ -1,9 +1,10 @@
-#include "framework/app_framework.h"
-#include "debug.h"
-#include "ch32v10x_spi.h"
-#include "ch32v10x_rcc.h"
 #include "ch32v10x_gpio.h"
 #include "ch32v10x_misc.h"
+#include "ch32v10x_rcc.h"
+#include "ch32v10x_spi.h"
+#include "debug.h"
+
+#include "framework/app_framework.h"
 
 #define SPI_BUFFER_SIZE 16
 
@@ -14,7 +15,7 @@ volatile uint16_t spi_int_rx_index = 0;
 volatile uint16_t spi_int_transfer_length = 0;
 volatile uint8_t spi_int_transfer_complete = 1;
 
-void SPI1_IRQHandler(void) {
+void SPI1_IRQHandler(void){
     // Handle receive interrupt
     if(SPI_I2S_GetITStatus(SPI1, SPI_I2S_IT_RXNE) != RESET) {
         spi_int_rx_buffer[spi_int_rx_index++] = SPI_I2S_ReceiveData(SPI1);
@@ -42,36 +43,36 @@ void SPI1_IRQHandler(void) {
     }
 }
 
-void spi_interrupt_setup(void) {
+void spi_interrupt_setup(void){
     GPIO_InitTypeDef GPIO_InitStructure;
     SPI_InitTypeDef SPI_InitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
-    
+
     printf("SPI Interrupt Setup\n");
-    
+
     // Enable clocks
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_SPI1, ENABLE);
-    
+
     // Configure SPI1 pins
     // PA5 - SCK, PA6 - MISO, PA7 - MOSI
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
-    
+
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
-    
+
     // Configure PA4 as CS (Chip Select) - manual control
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
-    
+
     // Set CS high (inactive)
     GPIO_SetBits(GPIOA, GPIO_Pin_4);
-    
+
     // Configure SPI1
     SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
     SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
@@ -83,21 +84,21 @@ void spi_interrupt_setup(void) {
     SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
     SPI_InitStructure.SPI_CRCPolynomial = 7;
     SPI_Init(SPI1, &SPI_InitStructure);
-    
+
     // Configure NVIC
     NVIC_InitStructure.NVIC_IRQChannel = SPI1_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
-    
+
     // Enable SPI1
     SPI_Cmd(SPI1, ENABLE);
-    
+
     printf("SPI Interrupt: SPI1 configured as master with interrupts\n");
 }
 
-void spi_interrupt_transfer(uint8_t* tx_data, uint16_t length) {
+void spi_interrupt_transfer(uint8_t* tx_data, uint16_t length){
     // Wait for previous transfer to complete
     while(!spi_int_transfer_complete);
 
@@ -124,15 +125,15 @@ void spi_interrupt_transfer(uint8_t* tx_data, uint16_t length) {
     SPI_I2S_ITConfig(SPI1, SPI_I2S_IT_TXE, ENABLE);
 }
 
-void spi_interrupt_write(uint8_t* data, uint16_t length) {
+void spi_interrupt_write(uint8_t* data, uint16_t length){
     spi_interrupt_transfer(data, length);
 }
 
-void spi_interrupt_read(uint16_t length) {
+void spi_interrupt_read(uint16_t length){
     spi_interrupt_transfer(NULL, length); // Send dummy bytes
 }
 
-void spi_interrupt_loop(void) {
+void spi_interrupt_loop(void){
     static uint8_t test_data[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22};
     static uint32_t loop_counter = 0;
     static uint8_t operation = 0; // 0 = write, 1 = read
@@ -143,9 +144,11 @@ void spi_interrupt_loop(void) {
         if(operation == 0) {
             // Write operation
             printf("SPI Interrupt: Writing data: ");
+
             for(int i = 0; i < 8; i++) {
                 printf("0x%02X ", test_data[i]);
             }
+
             printf("\n");
 
             spi_interrupt_write(test_data, 8);
@@ -168,9 +171,11 @@ void spi_interrupt_loop(void) {
             if(operation == 0) {
                 // Just completed a read operation
                 printf("SPI Interrupt: Received data: ");
+
                 for(int i = 0; i < spi_int_transfer_length; i++) {
                     printf("0x%02X ", spi_int_rx_buffer[i]);
                 }
+
                 printf("\n");
             } else {
                 // Just completed a write operation
