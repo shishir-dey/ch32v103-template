@@ -3,7 +3,7 @@
 #include "ch32v10x_gpio.h"
 #include "ch32v10x_rcc.h"
 
-void setup(void) {
+void hello_setup(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
     printf("Hello setup - GPIO Blinking\n");
@@ -21,7 +21,7 @@ void setup(void) {
     GPIO_SetBits(GPIOA, GPIO_Pin_1 | GPIO_Pin_2);
 }
 
-void loop(void) {
+void hello_loop(void) {
     static uint32_t pattern_counter = 0;
     static uint32_t step = 0;
 

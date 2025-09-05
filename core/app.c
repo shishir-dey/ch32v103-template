@@ -6,8 +6,8 @@ extern "C" {
 
 // Forward declarations for all app functions
 // Basic apps
-void setup(void);
-void loop(void);
+void hello_setup(void);
+void hello_loop(void);
 
 // ADC apps
 void adc_polling_setup(void);
@@ -68,7 +68,7 @@ void register_all_apps(void) {
     // ===========================================
     // BASIC APPS
     // ===========================================
-    register_app("Hello World", setup, loop);
+    register_app("Hello World", hello_setup, hello_loop);
 
     // ===========================================
     // ADC APPS
